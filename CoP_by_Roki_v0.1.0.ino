@@ -1,5 +1,4 @@
 // DECLARATION OF VARIABLES //
-#include "func.h"
 //
 
 // INPUT- OUTPUTS //
