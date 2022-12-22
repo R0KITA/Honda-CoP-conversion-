@@ -35,10 +35,10 @@ unsigned long sparktim2 = 0;
 void setup() {
   //Serial.begin(9600);
   //ATmega328 setup...
-  TCCR1A = 0;                                 //DONT TOUCH
-  TCCR1B = 0;                                 //DONT TOUCH
-  TCCR1B |=(0<<CS10) | (1<<CS11) | (0<<CS12); //DONT TOUCH
-  TIMSK1 |=(1<<TOIE1);                        //DONT TOUCH
+  TCCR1A = 0;                                 //DO NOT TOUCH
+  TCCR1B = 0;                                 //DO NOT TOUCH
+  TCCR1B |=(0<<CS10) | (1<<CS11) | (0<<CS12); //DO NOT TOUCH
+  TIMSK1 |=(1<<TOIE1);                        //DO NOT TOUCH
 
   //PORT SETUP
   /*OUTPUT*/DDRB = B00011110; //p,p,p,D12,D11,D10,D9,p
@@ -64,7 +64,7 @@ ISR(TIMER1_OVF_vect){
     
     /*DWELL MAPPING TO RPM
     if(RPM>9000){DWELL=map(RPM, 9000, 12000, MAXDWELL, MINDWELL);}
-    else{DWELL=2500;}
+    else{DWELL=MAXDWELL;}
     CLK_DWELL = 65535-(DWELL*2);
     */
   
