@@ -51,7 +51,7 @@ void setup() {
   pinMode(INJ, INPUT);
   //  
   // SYNCHING ///
-  delay
+  delay(2000);
   while (SYNCED < 1){
 
    while(digitalRead(INJ)>LOW){asm(" ");}
