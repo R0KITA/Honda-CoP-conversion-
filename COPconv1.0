@@ -136,13 +136,13 @@ int calculateCrankshaftAngle() {
 
 void determineCurrentCoil(int angle) {
   // Determine the current coil based on the crankshaft angle
-  if (angle >= 230 && angle < 330) {
+  if ((angle >= 330 && angle < 360) || (angle >= 0 && angle < 60)) {
     currentCoil = COIL_1;
-  } else if (angle >= 30 && angle < 120) {
+  } else if (angle >= 240 && angle < 330) {
     currentCoil = COIL_2;
-  } else if (angle >= 120 && angle < 210) {
+  } else if (angle >= 60 && angle < 150) {
     currentCoil = COIL_3;
-  } else if (angle >= 210 && angle < 300) {
+  } else if (angle >= 150 && angle < 240) {
     currentCoil = COIL_4;
   }
 }
