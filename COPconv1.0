@@ -2,6 +2,7 @@
 const int tdcSensorPin = 2;
 const int camshaftSensorPin = 3;
 const int ignitionSignalPin = 4;  // Replace with your actual ignition signal pin
+const int calibrationLedPin = 13; // Pin for calibration LED
 
 // Enumeration for states
 enum EngineState {
@@ -21,8 +22,8 @@ enum Coil {
 volatile int tdcPosition = 0;
 volatile int camshaftPosition = 0;
 const int camshaftToCrankshaftRatio = 2;
-const int camshaftRisingEdgeAngle = 20;
-const int camshaftFallingEdgeAngle = 10;
+const int camshaftRisingEdgeAngle = 10; // Adjusted angle for camshaft rising edge
+const int camshaftFallingEdgeAngle = 5; // Adjusted angle for camshaft falling edge
 
 // Variable to track the current engine state
 EngineState engineState = CALIBRATION;
@@ -31,10 +32,21 @@ int calibrationOffset = 0;  // The offset to set angle to 0 during calibration
 // Variable to track the current coil to fire
 Coil currentCoil = COIL_1;
 
+// Function declarations
+void determineCurrentCoil(int angle);
+void fireCoil(Coil coil);
+void dischargeAllCoils();
+bool isIgnitionSignalRisingEdge();
+bool isIgnitionSignalFallingEdge();
+void printEngineAngle();
+
 void setup() {
   pinMode(tdcSensorPin, INPUT);
   pinMode(camshaftSensorPin, INPUT);
   pinMode(ignitionSignalPin, INPUT);
+  pinMode(calibrationLedPin, OUTPUT); // Calibration LED pin
+  digitalWrite(calibrationLedPin, HIGH); // Turn on the LED initially
+  Serial.begin(9600); // Initialize Serial communication
   attachInterrupt(digitalPinToInterrupt(tdcSensorPin), tdcInterrupt, RISING);
   attachInterrupt(digitalPinToInterrupt(camshaftSensorPin), camshaftInterrupt, CHANGE);
 
@@ -59,6 +71,7 @@ void loop() {
         // Calibration completed, switch to normal operation
         engineState = NORMAL_OPERATION;
         calibrationOffset = calculateCrankshaftAngle();  // Set the offset to the current angle
+        digitalWrite(calibrationLedPin, HIGH); // Turn on the LED after calibration
       }
       break;
 
@@ -66,6 +79,9 @@ void loop() {
       // In normal operation, proceed with regular tasks
       int crankshaftAngle = calculateCrankshaftAngle() - calibrationOffset;  // Apply the offset
       crankshaftAngle %= 360;
+
+      // Print engine angle to Serial Monitor
+      printEngineAngle(crankshaftAngle);
 
       // Check for ignition signal falling edge
       if (isIgnitionSignalFallingEdge()) {
@@ -89,10 +105,14 @@ void loop() {
 void tdcInterrupt() {
   tdcPosition = 0;
 
+  // Reset camshaft position to 0 when TDC signal is detected
+  camshaftPosition = 0;
+
   // If in calibration state, set the state to normal operation
   if (engineState == CALIBRATION) {
     engineState = NORMAL_OPERATION;
     calibrationOffset = calculateCrankshaftAngle();  // Set the offset to the current angle
+    digitalWrite(calibrationLedPin, HIGH); // Turn on the LED after calibration
   }
 }
 
@@ -102,16 +122,29 @@ void camshaftInterrupt() {
 
   // Use integers instead of floating-point for angle calculations
   int currentAngle = (camshaftSignalState == HIGH) ? camshaftRisingEdgeAngle : camshaftFallingEdgeAngle;
-  currentAngle += camshaftPosition * 360;
+  currentAngle += camshaftPosition * 15; // Increment by 15 degrees for each tooth
   currentAngle %= 360;
 }
 
 int calculateCrankshaftAngle() {
   // Use integers for calculations
-  int crankshaftAngle = (camshaftPosition * (camshaftRisingEdgeAngle + camshaftFallingEdgeAngle) * camshaftToCrankshaftRatio) - tdcPosition;
+  int crankshaftAngle = (camshaftPosition * 15 * camshaftToCrankshaftRatio) - tdcPosition;
   crankshaftAngle %= 360;
 
   return crankshaftAngle;
+}
+
+void determineCurrentCoil(int angle) {
+  // Determine the current coil based on the crankshaft angle
+  if (angle >= 230 && angle < 330) {
+    currentCoil = COIL_1;
+  } else if (angle >= 30 && angle < 120) {
+    currentCoil = COIL_2;
+  } else if (angle >= 120 && angle < 210) {
+    currentCoil = COIL_3;
+  } else if (angle >= 210 && angle < 300) {
+    currentCoil = COIL_4;
+  }
 }
 
 void fireCoil(Coil coil) {
@@ -179,4 +212,16 @@ bool isIgnitionSignalFallingEdge() {
 
   // Check for falling edge
   if (lastIgnitionSignalState == HIGH && currentIgnitionSignalState == LOW) {
-   
+    // Falling edge detected
+    lastIgnitionSignalState = currentIgnitionSignalState;
+    return true;
+  }
+  lastIgnitionSignalState = currentIgnitionSignalState;
+  return false;
+}
+
+void printEngineAngle(int angle) {
+  // Print engine angle to Serial Monitor
+  Serial.print("Engine Angle: ");
+  Serial.println(angle);
+}
