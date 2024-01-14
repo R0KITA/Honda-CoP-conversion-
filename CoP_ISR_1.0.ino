@@ -3,7 +3,7 @@
 const int ICM_Pin = 2;           // Replace with your actual ICM signal pin
 const int INJcPin = 3;           // Replace with your actual common injector signal
 
-int NEXTCOIL = 0;
+int volatile NEXTCOIL = 0;
 
 // Enumeration for states
 enum EngineState {
@@ -60,11 +60,11 @@ void loop() {
 void ICM_Interrupt() {
   int currentState = digitalReadFast(ICM_Pin);
 
-  if (currentState == LOW) {
-    //Serial.println("ICM LOW - Discharging all coils");
+  if (currentState == HIGH) {
+    //Serial.println("ICM HIGH - Discharging all coils");
     dischargeAllCoils();
   } else {
-    //Serial.println("ICM HIGH - Firing coil " + String(NEXTCOIL));
+    //Serial.println("ICM LOW - Firing coil " + String(NEXTCOIL));
     fireCoil(NEXTCOIL);
   }
 }
@@ -99,18 +99,22 @@ void fireCoil(int coil) {
     case 1:
       //Serial.println("Firing Coil 1");
       digitalWriteFast(COIL_1, HIGH);
+      NEXTCOIL = 3;
       break;
     case 2:
       //Serial.println("Firing Coil 2");
       digitalWriteFast(COIL_2, HIGH);
+      NEXTCOIL = 1;
       break;
     case 3:
       //Serial.println("Firing Coil 3");
       digitalWriteFast(COIL_3, HIGH);
+      NEXTCOIL = 4;
       break;
     case 4:
       //Serial.println("Firing Coil 4");
       digitalWriteFast(COIL_4, HIGH);
+      NEXTCOIL = 2;
       break;
   }
 }
